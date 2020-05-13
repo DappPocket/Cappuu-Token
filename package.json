@@ -5,11 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "npx oz compile"
+    "compile": "npx oz compile",
+    "start-chain": "ganache-cli --deterministic"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@openzeppelin/cli": "^2.8.2"
+    "@openzeppelin/cli": "^2.8.2",
+    "ganache-cli": "^6.9.1"
   }
 }
