@@ -1,0 +1,6 @@
+# Dependency directory
+node_modules
+
+# only used to package @openzeppelin/contracts
+contracts/build/
+contracts/README.md
