@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "npx oz compile",
-    "start-chain": "ganache-cli --deterministic"
+    "start-chain": "ganache-cli --deterministic",
+    "start-fork-chain": "ganache-cli --deterministic --fork https://mainnet.infura.io/v3/4c96c6bab18845dba07ad14cc0c18998 ",
+    "deploy": "npx oz deploy"
   },
   "author": "",
   "license": "ISC",
