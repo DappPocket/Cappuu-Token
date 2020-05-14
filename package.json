@@ -8,7 +8,7 @@
     "start-chain": "ganache-cli --deterministic",
     "start-fork-chain": "ganache-cli --deterministic --fork https://mainnet.infura.io/v3/4c96c6bab18845dba07ad14cc0c18998",
     "deploy": "npx oz deploy",
-    "test": "npx oz compile && npx mocha --exit --timeout 10000"
+    "test": "npx oz compile && npx mocha --exit --timeout 100000"
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +16,7 @@
     "@openzeppelin/cli": "^2.8.2",
     "@openzeppelin/contracts": "2.3.0",
     "@openzeppelin/test-environment": "^0.1.4",
+    "@openzeppelin/upgrades": "^2.8.0",
     "chai": "^4.2.0",
     "ganache-cli": "^6.9.1",
     "mocha": "^7.1.2"

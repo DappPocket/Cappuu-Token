@@ -19,8 +19,8 @@ import "../../interfaces/CUSDCInterestRateModelInterface.sol";
  * accounts, as well as from contract accounts via ERC-1271.
  */
 contract DharmaUSDCImplementationV1 is DharmaTokenV1 {
-  string internal constant _NAME = "Dharma USD Coin";
-  string internal constant _SYMBOL = "dUSDC";
+  string internal constant _NAME = "Cappuu USD Coin";
+  string internal constant _SYMBOL = "uUSDC";
   string internal constant _UNDERLYING_NAME = "USD Coin";
   string internal constant _CTOKEN_SYMBOL = "cUSDC";
 
@@ -43,7 +43,7 @@ contract DharmaUSDCImplementationV1 is DharmaTokenV1 {
    * redeemable for each cUSDC, and the cUSDC supply rate per block (with 18
    * decimal places added to each returned rate).
    */
-  function _getCurrentCTokenRates() internal view returns (
+  function _getCurrentMTokenRates() internal view returns (
     uint256 exchangeRate, uint256 supplyRate
   ) {
     // Determine number of blocks that have elapsed since last cUSDC accrual.
