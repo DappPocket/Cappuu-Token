@@ -32,15 +32,16 @@ describe("Initialize Cappuu USDC", () => {
     })
 
     it("Get Cappuu USDC Metadata", async () => {
-        // const name = await dharmaUSDC.name();
-        // expect(name).to.be.equal("Cappuu USD Coin");
+        // TODO: fix this
+        const name = await dharmaUSDC.name();
+        expect(name).to.be.equal("Cappuu USD Coin");
     });
 
     it("Get Cappuu USDC Exchange Rate", async () => {
-        // expect(parseInt(totalSupply)).to.be.above(0);
+        // TODO: update this
     });
 
     it("Mint First Cappuu USDC", async () => {
-        // expect(parseInt(totalSupply)).to.be.above(0);
+        // TODO: update this
     });
 });

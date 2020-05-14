@@ -3,6 +3,7 @@ pragma solidity 0.5.11;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./DharmaTokenV1.sol";
 import "../../interfaces/CTokenInterface.sol";
+import "../../interfaces/DMM/IDmmToken.sol";
 import "../../interfaces/ERC20Interface.sol";
 import "../../interfaces/CUSDCInterestRateModelInterface.sol";
 
@@ -28,6 +29,10 @@ contract DharmaUSDCImplementationV1 is DharmaTokenV1 {
     0x39AA39c021dfbaE8faC545936693aC917d5E7563 // mainnet
   );
 
+  IDmmToken internal constant _MUSDC = IDmmToken(
+    0x39AA39c021dfbaE8faC545936693aC917d5E7563 // mainnet
+  );
+
   ERC20Interface internal constant _USDC = ERC20Interface(
     0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 // mainnet
   );
@@ -43,6 +48,7 @@ contract DharmaUSDCImplementationV1 is DharmaTokenV1 {
    * redeemable for each cUSDC, and the cUSDC supply rate per block (with 18
    * decimal places added to each returned rate).
    */
+  // TODO: Change this
   function _getCurrentMTokenRates() internal view returns (
     uint256 exchangeRate, uint256 supplyRate
   ) {
