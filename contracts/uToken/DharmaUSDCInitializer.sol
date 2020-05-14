@@ -1,8 +1,7 @@
 pragma solidity 0.5.11;
 
-import "../../interfaces/CTokenInterface.sol";
+import "../../interfaces/DMM/IDmmToken.sol";
 import "../../interfaces/ERC20Interface.sol";
-
 
 /**
  * @title DharmaUSDCInitializer
@@ -10,17 +9,17 @@ import "../../interfaces/ERC20Interface.sol";
  * @notice Initializer for the Dharma USD Coin token.
  */
 contract DharmaUSDCInitializer {
-  event Accrue(uint256 dTokenExchangeRate, uint256 cTokenExchangeRate);
+  event Accrue(uint256 dTokenExchangeRate, uint256 mTokenExchangeRate);
 
   // The block number and cToken + dToken exchange rates are updated on accrual.
   struct AccrualIndex {
     uint112 dTokenExchangeRate;
-    uint112 cTokenExchangeRate;
+    uint112 mTokenExchangeRate;
     uint32 block;
   }
 
-  CTokenInterface internal constant _CUSDC = CTokenInterface(
-    0x39AA39c021dfbaE8faC545936693aC917d5E7563 // mainnet
+  IDmmToken internal constant _MUSDC = IDmmToken(
+    0x3564ad35b9E95340E5Ace2D6251dbfC76098669B // mainnet
   );
 
   ERC20Interface internal constant _USDC = ERC20Interface(
@@ -40,22 +39,22 @@ contract DharmaUSDCInitializer {
   function initialize() public {
     // Approve cToken to transfer underlying for this contract in order to mint.
     require(
-      _USDC.approve(address(_CUSDC), uint256(-1)),
-      "Initial cUSDC approval failed."
+      _USDC.approve(address(_MUSDC), uint256(-1)),
+      "Initial mUSDC approval failed."
     );
 
     // Initial dToken exchange rate is 1-to-1 (dTokens have 8 decimals).
     uint256 dTokenExchangeRate = 1e16;
 
     // Accrue cToken interest and retrieve the current cToken exchange rate.
-    uint256 cTokenExchangeRate = _CUSDC.exchangeRateCurrent();
+    uint256 mTokenExchangeRate = _MUSDC.getCurrentExchangeRate();
 
     // Initialize accrual index with current block number and exchange rates.
     AccrualIndex storage accrualIndex = _accrualIndex;
     accrualIndex.dTokenExchangeRate = uint112(dTokenExchangeRate);
-    accrualIndex.cTokenExchangeRate = _safeUint112(cTokenExchangeRate);
+    accrualIndex.mTokenExchangeRate = _safeUint112(mTokenExchangeRate);
     accrualIndex.block = uint32(block.number);
-    emit Accrue(dTokenExchangeRate, cTokenExchangeRate);
+    emit Accrue(dTokenExchangeRate, mTokenExchangeRate);
   }
 
   /**
