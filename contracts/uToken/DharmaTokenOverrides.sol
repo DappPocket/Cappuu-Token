@@ -37,13 +37,13 @@ contract DharmaTokenOverrides {
    * @notice Internal pure function to supply the symbol of the backing cToken.
    * @return The symbol of the backing cToken.
    */
-  function _getCTokenSymbol() internal pure returns (string memory cTokenSymbol);
+  function _getMTokenSymbol() internal pure returns (string memory mTokenSymbol);
 
   /**
    * @notice Internal pure function to supply the address of the backing cToken.
    * @return The address of the backing cToken.
    */
-  function _getCToken() internal pure returns (address cToken);
+  function _getMToken() internal pure returns (address mToken);
 
   /**
    * @notice Internal pure function to supply the name of the dToken.

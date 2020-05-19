@@ -14,6 +14,11 @@ const MUSDC = new web3.eth.Contract(
     constants.MUSDC_MAINNET_ADDRESS
 );
 
+const DMMController = new web3.eth.Contract(
+    constants.DMM_CONTROLLER_ABI,
+    constants.DMM_CONTROLLER_ADDRESS
+);
+
 /**
  * Test mainnet USDC
  */
@@ -40,5 +45,12 @@ describe("DMM USDC", () => {
             .call();
         expect(parseInt(exchangeRate)).to.be.above(0);
         // console.log("DMM USDC exchangeRate:", exchangeRate);
+    });
+    it("Get DMM USDC interest rate", async () => {
+        const interestRate = await DMMController.methods
+            .getInterestRateByUnderlyingTokenAddress(constants.USDC_MAINNET_ADDRESS)
+            .call();
+        expect(parseInt(interestRate)).to.be.above(0);
+        // console.log("DMM USDC interest rate:", interestRate);
     });
 });

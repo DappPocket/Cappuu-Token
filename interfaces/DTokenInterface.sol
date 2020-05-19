@@ -15,23 +15,23 @@ interface DTokenInterface {
   // The block number and cToken + dToken exchange rates are updated on accrual.
   struct AccrualIndex {
     uint112 dTokenExchangeRate;
-    uint112 cTokenExchangeRate;
+    uint112 mTokenExchangeRate;
     uint32 block;
   }
 
   // These external functions trigger accrual on the dToken and backing cToken.
-  function mint(uint256 underlyingToSupply) external returns (uint256 dTokensMinted);
-  function redeem(uint256 dTokensToBurn) external returns (uint256 underlyingReceived);
-  function redeemUnderlying(uint256 underlyingToReceive) external returns (uint256 dTokensBurned);
-  function pullSurplus() external returns (uint256 cTokenSurplus);
+  // function mint(uint256 underlyingToSupply) external returns (uint256 dTokensMinted);
+  // function redeem(uint256 dTokensToBurn) external returns (uint256 underlyingReceived);
+  // function redeemUnderlying(uint256 underlyingToReceive) external returns (uint256 dTokensBurned);
+  // function pullSurplus() external returns (uint256 cTokenSurplus);
 
   // These external functions only trigger accrual on the dToken.
-  function mintViaCToken(uint256 cTokensToSupply) external returns (uint256 dTokensMinted);
-  function redeemToCToken(uint256 dTokensToBurn) external returns (uint256 cTokensReceived);
-  function redeemUnderlyingToCToken(uint256 underlyingToReceive) external returns (uint256 dTokensBurned);
+  // function mintViaCToken(uint256 cTokensToSupply) external returns (uint256 dTokensMinted);
+  // function redeemToCToken(uint256 dTokensToBurn) external returns (uint256 cTokensReceived);
+  // function redeemUnderlyingToCToken(uint256 underlyingToReceive) external returns (uint256 dTokensBurned);
   function accrueInterest() external;
-  function transferUnderlying(address recipient, uint256 underlyingEquivalentAmount) external returns (bool success);
-  function transferUnderlyingFrom(address sender, address recipient, uint256 underlyingEquivalentAmount) external returns (bool success);
+  // function transferUnderlying(address recipient, uint256 underlyingEquivalentAmount) external returns (bool success);
+  // function transferUnderlyingFrom(address sender, address recipient, uint256 underlyingEquivalentAmount) external returns (bool success);
 
   // This function provides basic meta-tx support and does not trigger accrual.
   function modifyAllowanceViaMetaTransaction(
@@ -53,10 +53,10 @@ interface DTokenInterface {
   function exchangeRateCurrent() external view returns (uint256 dTokenExchangeRate);
   function supplyRatePerBlock() external view returns (uint256 dTokenInterestRate);
   function accrualBlockNumber() external view returns (uint256 blockNumber);
-  function getSurplus() external view returns (uint256 cTokenSurplus);
-  function getSurplusUnderlying() external view returns (uint256 underlyingSurplus);
-  function getSpreadPerBlock() external view returns (uint256 rateSpread);
+  // function getSurplus() external view returns (uint256 cTokenSurplus);
+  // function getSurplusUnderlying() external view returns (uint256 underlyingSurplus);
+  // function getSpreadPerBlock() external view returns (uint256 rateSpread);
   function getVersion() external pure returns (uint256 version);
-  function getCToken() external pure returns (address cToken);
+  function getMToken() external pure returns (address cToken);
   function getUnderlying() external pure returns (address underlying);
 }

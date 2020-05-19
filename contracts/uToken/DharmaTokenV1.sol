@@ -1,11 +1,10 @@
 pragma solidity 0.5.11;
 
 import "./DharmaTokenHelpers.sol";
-import "../../interfaces/CTokenInterface.sol";
 import "../../interfaces/DTokenInterface.sol";
 import "../../interfaces/ERC20Interface.sol";
 import "../../interfaces/ERC1271Interface.sol";
-
+import "../../interfaces/DMM/IDmmToken.sol";
 
 /**
  * @title DharmaTokenV1
@@ -24,7 +23,8 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
   uint256 private constant _DTOKEN_VERSION = 1;
 
   // Set block number and dToken + cToken exchange rate in slot zero on accrual.
-  AccrualIndex private _accrualIndex;
+  // TODO: change to private
+  AccrualIndex public _accrualIndex;
 
   // Slot one tracks the total issued dTokens.
   uint256 private _totalSupply;
@@ -46,41 +46,41 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * @return The amount of dTokens received in return for the supplied
    * underlying tokens.
    */
-  function mint(
-    uint256 underlyingToSupply
-  ) external returns (uint256 dTokensMinted) {
-    // Instantiate interfaces for the underlying token and the backing cToken.
-    ERC20Interface underlying = ERC20Interface(_getUnderlying());
-    CTokenInterface cToken = CTokenInterface(_getCToken());
+  // function mint(
+  //   uint256 underlyingToSupply
+  // ) external returns (uint256 dTokensMinted) {
+  //   // Instantiate interfaces for the underlying token and the backing cToken.
+  //   ERC20Interface underlying = ERC20Interface(_getUnderlying());
+  //   IDmmToken mToken = IDmmToken(_getMToken());
 
-    // Pull in underlying - ensure that this contract has sufficient allowance.
-    require(
-      underlying.transferFrom(msg.sender, address(this), underlyingToSupply),
-      _getTransferFailureMessage()
-    );
+  //   // Pull in underlying - ensure that this contract has sufficient allowance.
+  //   require(
+  //     underlying.transferFrom(msg.sender, address(this), underlyingToSupply),
+  //     _getTransferFailureMessage()
+  //   );
 
-    // Use underlying to mint cTokens and ensure that the operation succeeds.
-    (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
-      cToken.mint.selector, underlyingToSupply
-    ));
-    _checkCompoundInteraction(cToken.mint.selector, ok, data);
+  //   // Use underlying to mint cTokens and ensure that the operation succeeds.
+  //   (bool ok, bytes memory data) = address(mToken).call(abi.encodeWithSelector(
+  //     mToken.mint.selector, underlyingToSupply
+  //   ));
+  //   _checkCompoundInteraction(mToken.mint.selector, ok, data);
 
-    // Accrue after the Compound mint to avoid duplicating accrual calculations.
-    (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(false);
+  //   // Accrue after the Compound mint to avoid duplicating accrual calculations.
+  //   (uint256 dTokenExchangeRate, uint256 mTokenExchangeRate) = _accrue(false);
 
-    // Get underlying equivalent of minted cTokens to prevent "dust" griefing.
-    (, uint256 underlyingEquivalent) = _fromUnderlyingAndBack(
-      underlyingToSupply, cTokenExchangeRate, false, false
-    );
+  //   // Get underlying equivalent of minted cTokens to prevent "dust" griefing.
+  //   (, uint256 underlyingEquivalent) = _fromUnderlyingAndBack(
+  //     underlyingToSupply, mTokenExchangeRate, false, false
+  //   );
 
-    // Determine dTokens to mint using underlying equivalent and exchange rate.
-    dTokensMinted = _fromUnderlying(
-      underlyingEquivalent, dTokenExchangeRate, false
-    );
+  //   // Determine dTokens to mint using underlying equivalent and exchange rate.
+  //   dTokensMinted = _fromUnderlying(
+  //     underlyingEquivalent, dTokenExchangeRate, false
+  //   );
 
-    // Mint dTokens to the caller.
-    _mint(msg.sender, underlyingToSupply, dTokensMinted);
-  }
+  //   // Mint dTokens to the caller.
+  //   _mint(msg.sender, underlyingToSupply, dTokensMinted);
+  // }
 
   /**
    * @notice Transfer `cTokensToSupply` cTokens from `msg.sender` to this
@@ -91,34 +91,34 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * minting.
    * @return The amount of dTokens received in return for the supplied cTokens.
    */
-  function mintViaCToken(
-    uint256 cTokensToSupply
-  ) external returns (uint256 dTokensMinted) {
-    // Instantiate the interface for the backing cToken.
-    CTokenInterface cToken = CTokenInterface(_getCToken());
+  // function mintViaCToken(
+  //   uint256 cTokensToSupply
+  // ) external returns (uint256 dTokensMinted) {
+  //   // Instantiate the interface for the backing cToken.
+  //   IDmmToken cToken = IDmmToken(_getMToken());
 
-    // Pull in cTokens - ensure that this contract has sufficient allowance.
-    (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
-      cToken.transferFrom.selector, msg.sender, address(this), cTokensToSupply
-    ));
-    _checkCompoundInteraction(cToken.transferFrom.selector, ok, data);
+  //   // Pull in cTokens - ensure that this contract has sufficient allowance.
+  //   (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
+  //     cToken.transferFrom.selector, msg.sender, address(this), cTokensToSupply
+  //   ));
+  //   _checkCompoundInteraction(cToken.transferFrom.selector, ok, data);
 
-    // Accrue interest and retrieve current cToken and dToken exchange rates.
-    (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(true);
+  //   // Accrue interest and retrieve current cToken and dToken exchange rates.
+  //   (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(true);
 
-    // Determine the underlying equivalent of the supplied cToken amount.
-    uint256 underlyingEquivalent = _toUnderlying(
-      cTokensToSupply, cTokenExchangeRate, false
-    );
+  //   // Determine the underlying equivalent of the supplied cToken amount.
+  //   uint256 underlyingEquivalent = _toUnderlying(
+  //     cTokensToSupply, cTokenExchangeRate, false
+  //   );
 
-    // Determine dTokens to mint using underlying equivalent and exchange rate.
-    dTokensMinted = _fromUnderlying(
-      underlyingEquivalent, dTokenExchangeRate, false
-    );
+  //   // Determine dTokens to mint using underlying equivalent and exchange rate.
+  //   dTokensMinted = _fromUnderlying(
+  //     underlyingEquivalent, dTokenExchangeRate, false
+  //   );
 
-    // Mint dTokens to the caller.
-    _mint(msg.sender, underlyingEquivalent, dTokensMinted);
-  }
+  //   // Mint dTokens to the caller.
+  //   _mint(msg.sender, underlyingEquivalent, dTokensMinted);
+  // }
 
   /**
    * @notice Redeem `dTokensToBurn` dTokens from `msg.sender`, use the
@@ -129,42 +129,42 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * @return The amount of underlying received in return for the provided
    * dTokens.
    */
-  function redeem(
-    uint256 dTokensToBurn
-  ) external returns (uint256 underlyingReceived) {
-    // Instantiate interfaces for the underlying token and the backing cToken.
-    ERC20Interface underlying = ERC20Interface(_getUnderlying());
-    CTokenInterface cToken = CTokenInterface(_getCToken());
+  // function redeem(
+  //   uint256 dTokensToBurn
+  // ) external returns (uint256 underlyingReceived) {
+  //   // Instantiate interfaces for the underlying token and the backing cToken.
+  //   ERC20Interface underlying = ERC20Interface(_getUnderlying());
+  //   IDmmToken mToken = IDmmToken(_getMToken());
 
-    // Accrue interest and retrieve current dToken and cToken exchange rates.
-    (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(true);
+  //   // Accrue interest and retrieve current dToken and cToken exchange rates.
+  //   (uint256 dTokenExchangeRate, uint256 mTokenExchangeRate) = _accrue(true);
 
-    // Determine the equivalent underlying value of the dTokens to be burned.
-    uint256 underlyingEquivalent = _toUnderlying(
-      dTokensToBurn, dTokenExchangeRate, false
-    );
+  //   // Determine the equivalent underlying value of the dTokens to be burned.
+  //   uint256 underlyingEquivalent = _toUnderlying(
+  //     dTokensToBurn, dTokenExchangeRate, false
+  //   );
 
-    // Get minted cTokens and underlying equivalent to prevent "dust" griefing.
-    uint256 cTokenEquivalent;
-    (cTokenEquivalent, underlyingReceived) = _fromUnderlyingAndBack(
-      underlyingEquivalent, cTokenExchangeRate, false, false
-    );
+  //   // Get minted cTokens and underlying equivalent to prevent "dust" griefing.
+  //   uint256 mTokenEquivalent;
+  //   (mTokenEquivalent, underlyingReceived) = _fromUnderlyingAndBack(
+  //     underlyingEquivalent, mTokenExchangeRate, false, false
+  //   );
 
-    // Burn the dTokens.
-    _burn(msg.sender, underlyingReceived, dTokensToBurn);
+  //   // Burn the dTokens.
+  //   _burn(msg.sender, underlyingReceived, dTokensToBurn);
 
-    // Use cTokens to redeem underlying and ensure that the operation succeeds.
-    (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
-      cToken.redeem.selector, cTokenEquivalent
-    ));
-    _checkCompoundInteraction(cToken.redeem.selector, ok, data);
+  //   // Use cTokens to redeem underlying and ensure that the operation succeeds.
+  //   (bool ok, bytes memory data) = address(mToken).call(abi.encodeWithSelector(
+  //     mToken.redeem.selector, mTokenEquivalent
+  //   ));
+  //   _checkCompoundInteraction(mToken.redeem.selector, ok, data);
 
-    // Send the redeemed underlying tokens to the caller.
-    require(
-      underlying.transfer(msg.sender, underlyingReceived),
-      _getTransferFailureMessage()
-    );
-  }
+  //   // Send the redeemed underlying tokens to the caller.
+  //   require(
+  //     underlying.transfer(msg.sender, underlyingReceived),
+  //     _getTransferFailureMessage()
+  //   );
+  // }
 
   /**
    * @notice Redeem `dTokensToBurn` dTokens from `msg.sender` and transfer the
@@ -173,34 +173,34 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * for the cTokens.
    * @return The amount of cTokens received in return for the provided dTokens.
    */
-  function redeemToCToken(
-    uint256 dTokensToBurn
-  ) external returns (uint256 cTokensReceived) {
-    // Instantiate the interface for the backing cToken.
-    CTokenInterface cToken = CTokenInterface(_getCToken());
+  // function redeemToCToken(
+  //   uint256 dTokensToBurn
+  // ) external returns (uint256 cTokensReceived) {
+  //   // Instantiate the interface for the backing cToken.
+  //   IDmmToken cToken = IDmmToken(_getMToken());
 
-    // Accrue interest and retrieve current cToken and dToken exchange rates.
-    (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(true);
+  //   // Accrue interest and retrieve current cToken and dToken exchange rates.
+  //   (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(true);
 
-    // Determine the underlying token value of the dTokens to be burned.
-    uint256 underlyingEquivalent = _toUnderlying(
-      dTokensToBurn, dTokenExchangeRate, false
-    );
+  //   // Determine the underlying token value of the dTokens to be burned.
+  //   uint256 underlyingEquivalent = _toUnderlying(
+  //     dTokensToBurn, dTokenExchangeRate, false
+  //   );
 
-    // Determine amount of cTokens corresponding to underlying equivalent value.
-    cTokensReceived = _fromUnderlying(
-      underlyingEquivalent, cTokenExchangeRate, false
-    );
+  //   // Determine amount of cTokens corresponding to underlying equivalent value.
+  //   cTokensReceived = _fromUnderlying(
+  //     underlyingEquivalent, cTokenExchangeRate, false
+  //   );
 
-    // Burn the dTokens.
-    _burn(msg.sender, underlyingEquivalent, dTokensToBurn);
+  //   // Burn the dTokens.
+  //   _burn(msg.sender, underlyingEquivalent, dTokensToBurn);
 
-    // Transfer cTokens to the caller and ensure that the operation succeeds.
-    (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
-      cToken.transfer.selector, msg.sender, cTokensReceived
-    ));
-    _checkCompoundInteraction(cToken.transfer.selector, ok, data);
-  }
+  //   // Transfer cTokens to the caller and ensure that the operation succeeds.
+  //   (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
+  //     cToken.transfer.selector, msg.sender, cTokensReceived
+  //   ));
+  //   _checkCompoundInteraction(cToken.transfer.selector, ok, data);
+  // }
 
   /**
    * @notice Redeem the dToken equivalent value of the underlying token amount
@@ -212,41 +212,41 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * @return The amount of dTokens burned in exchange for the returned
    * underlying tokens.
    */
-  function redeemUnderlying(
-    uint256 underlyingToReceive
-  ) external returns (uint256 dTokensBurned) {
-    // Instantiate interfaces for the underlying token and the backing cToken.
-    ERC20Interface underlying = ERC20Interface(_getUnderlying());
-    CTokenInterface cToken = CTokenInterface(_getCToken());
+  // function redeemUnderlying(
+  //   uint256 underlyingToReceive
+  // ) external returns (uint256 dTokensBurned) {
+  //   // Instantiate interfaces for the underlying token and the backing cToken.
+  //   ERC20Interface underlying = ERC20Interface(_getUnderlying());
+  //   IDmmToken cToken = IDmmToken(_getMToken());
 
-    // Use cTokens to redeem underlying and ensure that the operation succeeds.
-    (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
-      cToken.redeemUnderlying.selector, underlyingToReceive
-    ));
-    _checkCompoundInteraction(cToken.redeemUnderlying.selector, ok, data);
+  //   // Use cTokens to redeem underlying and ensure that the operation succeeds.
+  //   (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
+  //     cToken.redeemUnderlying.selector, underlyingToReceive
+  //   ));
+  //   _checkCompoundInteraction(cToken.redeemUnderlying.selector, ok, data);
 
-    // Accrue after the Compound redeem to avoid duplicating calculations.
-    (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(false);
+  //   // Accrue after the Compound redeem to avoid duplicating calculations.
+  //   (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(false);
 
-    // Get underlying equivalent of redeemed cTokens to prevent "dust" griefing.
-    (, uint256 underlyingEquivalent) = _fromUnderlyingAndBack(
-      underlyingToReceive, cTokenExchangeRate, true, true // rounding up both
-    );
+  //   // Get underlying equivalent of redeemed cTokens to prevent "dust" griefing.
+  //   (, uint256 underlyingEquivalent) = _fromUnderlyingAndBack(
+  //     underlyingToReceive, cTokenExchangeRate, true, true // rounding up both
+  //   );
 
-    // Determine the dTokens to redeem using the exchange rate, rounding up.
-    dTokensBurned = _fromUnderlying(
-      underlyingEquivalent, dTokenExchangeRate, true
-    );
+  //   // Determine the dTokens to redeem using the exchange rate, rounding up.
+  //   dTokensBurned = _fromUnderlying(
+  //     underlyingEquivalent, dTokenExchangeRate, true
+  //   );
 
-    // Burn the dTokens.
-    _burn(msg.sender, underlyingToReceive, dTokensBurned);
+  //   // Burn the dTokens.
+  //   _burn(msg.sender, underlyingToReceive, dTokensBurned);
 
-    // Send the redeemed underlying tokens to the caller.
-    require(
-      underlying.transfer(msg.sender, underlyingToReceive),
-      _getTransferFailureMessage()
-    );
-  }
+  //   // Send the redeemed underlying tokens to the caller.
+  //   require(
+  //     underlying.transfer(msg.sender, underlyingToReceive),
+  //     _getTransferFailureMessage()
+  //   );
+  // }
 
   /**
    * @notice Redeem the dToken equivalent value of the underlying tokens of
@@ -256,36 +256,36 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * underlying token, of cTokens to receive.
    * @return The amount of dTokens burned in exchange for the returned cTokens.
    */
-  function redeemUnderlyingToCToken(
-    uint256 underlyingToReceive
-  ) external returns (uint256 dTokensBurned) {
-    // Instantiate the interface for the backing cToken.
-    CTokenInterface cToken = CTokenInterface(_getCToken());
+  // function redeemUnderlyingToCToken(
+  //   uint256 underlyingToReceive
+  // ) external returns (uint256 dTokensBurned) {
+  //   // Instantiate the interface for the backing cToken.
+  //   IDmmToken cToken = IDmmToken(_getMToken());
 
-    // Accrue interest and retrieve current cToken and dToken exchange rates.
-    (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(true);
+  //   // Accrue interest and retrieve current cToken and dToken exchange rates.
+  //   (uint256 dTokenExchangeRate, uint256 cTokenExchangeRate) = _accrue(true);
 
-    // Get received cTokens and underlying equivalent (prevent "dust" griefing).
-    (
-      uint256 cTokensToReceive, uint256 underlyingEquivalent
-    ) = _fromUnderlyingAndBack(
-      underlyingToReceive, cTokenExchangeRate, false, true // round down cTokens
-    );
+  //   // Get received cTokens and underlying equivalent (prevent "dust" griefing).
+  //   (
+  //     uint256 cTokensToReceive, uint256 underlyingEquivalent
+  //   ) = _fromUnderlyingAndBack(
+  //     underlyingToReceive, cTokenExchangeRate, false, true // round down cTokens
+  //   );
 
-    // Determine redeemed dTokens using equivalent underlying value, rounded up.
-    dTokensBurned = _fromUnderlying(
-      underlyingEquivalent, dTokenExchangeRate, true
-    );
+  //   // Determine redeemed dTokens using equivalent underlying value, rounded up.
+  //   dTokensBurned = _fromUnderlying(
+  //     underlyingEquivalent, dTokenExchangeRate, true
+  //   );
 
-    // Burn the dTokens.
-    _burn(msg.sender, underlyingToReceive, dTokensBurned);
+  //   // Burn the dTokens.
+  //   _burn(msg.sender, underlyingToReceive, dTokensBurned);
 
-    // Transfer cTokens to the caller and ensure that the operation succeeds.
-    (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
-      cToken.transfer.selector, msg.sender, cTokensToReceive
-    ));
-    _checkCompoundInteraction(cToken.transfer.selector, ok, data);
-  }
+  //   // Transfer cTokens to the caller and ensure that the operation succeeds.
+  //   (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
+  //     cToken.transfer.selector, msg.sender, cTokensToReceive
+  //   ));
+  //   _checkCompoundInteraction(cToken.transfer.selector, ok, data);
+  // }
 
   /**
    * @notice Transfer cTokens with underlying value in excess of the total
@@ -294,31 +294,31 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * dToken.
    * @return The amount of cTokens transferred to the vault account.
    */
-  function pullSurplus() external returns (uint256 cTokenSurplus) {
-    // Instantiate the interface for the backing cToken.
-    CTokenInterface cToken = CTokenInterface(_getCToken());
+  // function pullSurplus() external returns (uint256 cTokenSurplus) {
+  //   // Instantiate the interface for the backing cToken.
+  //   IDmmToken cToken = IDmmToken(_getMToken());
 
-    // Accrue interest on the cToken and ensure that the operation succeeds.
-    (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
-      cToken.accrueInterest.selector
-    ));
-    _checkCompoundInteraction(cToken.accrueInterest.selector, ok, data);
+  //   // Accrue interest on the cToken and ensure that the operation succeeds.
+  //   (bool ok, bytes memory data) = address(cToken).call(abi.encodeWithSelector(
+  //     cToken.accrueInterest.selector
+  //   ));
+  //   _checkCompoundInteraction(cToken.accrueInterest.selector, ok, data);
 
-    // Accrue interest on the dToken, reusing the stored cToken exchange rate.
-    _accrue(false);
+  //   // Accrue interest on the dToken, reusing the stored cToken exchange rate.
+  //   _accrue(false);
 
-    // Determine cToken surplus in underlying (cToken value - dToken value).
-    uint256 underlyingSurplus;
-    (underlyingSurplus, cTokenSurplus) = _getSurplus();
+  //   // Determine cToken surplus in underlying (cToken value - dToken value).
+  //   uint256 underlyingSurplus;
+  //   (underlyingSurplus, cTokenSurplus) = _getSurplus();
 
-    // Transfer cToken surplus to vault and ensure that the operation succeeds.
-    (ok, data) = address(cToken).call(abi.encodeWithSelector(
-      cToken.transfer.selector, _getVault(), cTokenSurplus
-    ));
-    _checkCompoundInteraction(cToken.transfer.selector, ok, data);
+  //   // Transfer cToken surplus to vault and ensure that the operation succeeds.
+  //   (ok, data) = address(cToken).call(abi.encodeWithSelector(
+  //     cToken.transfer.selector, _getVault(), cTokenSurplus
+  //   ));
+  //   _checkCompoundInteraction(cToken.transfer.selector, ok, data);
 
-    emit CollectSurplus(underlyingSurplus, cTokenSurplus);
-  }
+  //   emit CollectSurplus(underlyingSurplus, cTokenSurplus);
+  // }
 
   /**
    * @notice Manually advance the dToken exchange rate and cToken exchange rate
@@ -352,21 +352,21 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * of dTokens to transfer.
    * @return A boolean indicating whether the transfer was successful.
    */
-  function transferUnderlying(
-    address recipient, uint256 underlyingEquivalentAmount
-  ) external returns (bool success) {
-    // Accrue interest and retrieve the current dToken exchange rate.
-    (uint256 dTokenExchangeRate, ) = _accrue(true);
+  // function transferUnderlying(
+  //   address recipient, uint256 underlyingEquivalentAmount
+  // ) external returns (bool success) {
+  //   // Accrue interest and retrieve the current dToken exchange rate.
+  //   (uint256 dTokenExchangeRate, ) = _accrue(true);
 
-    // Determine dToken amount to transfer using the exchange rate, rounded up.
-    uint256 dTokenAmount = _fromUnderlying(
-      underlyingEquivalentAmount, dTokenExchangeRate, true
-    );
+  //   // Determine dToken amount to transfer using the exchange rate, rounded up.
+  //   uint256 dTokenAmount = _fromUnderlying(
+  //     underlyingEquivalentAmount, dTokenExchangeRate, true
+  //   );
 
-    // Transfer the dTokens.
-    _transfer(msg.sender, recipient, dTokenAmount);
-    success = true;
-  }
+  //   // Transfer the dTokens.
+  //   _transfer(msg.sender, recipient, dTokenAmount);
+  //   success = true;
+  // }
 
   /**
    * @notice Approve `spender` to transfer up to `value` dTokens on behalf of
@@ -407,21 +407,21 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * of dTokens to transfer.
    * @return A boolean indicating whether the transfer was successful.
    */
-  function transferUnderlyingFrom(
-    address sender, address recipient, uint256 underlyingEquivalentAmount
-  ) external returns (bool success) {
-    // Accrue interest and retrieve the current dToken exchange rate.
-    (uint256 dTokenExchangeRate, ) = _accrue(true);
+  // function transferUnderlyingFrom(
+  //   address sender, address recipient, uint256 underlyingEquivalentAmount
+  // ) external returns (bool success) {
+  //   // Accrue interest and retrieve the current dToken exchange rate.
+  //   (uint256 dTokenExchangeRate, ) = _accrue(true);
 
-    // Determine dToken amount to transfer using the exchange rate, rounded up.
-    uint256 dTokenAmount = _fromUnderlying(
-      underlyingEquivalentAmount, dTokenExchangeRate, true
-    );
+  //   // Determine dToken amount to transfer using the exchange rate, rounded up.
+  //   uint256 dTokenAmount = _fromUnderlying(
+  //     underlyingEquivalentAmount, dTokenExchangeRate, true
+  //   );
 
-    // Transfer the dTokens and adjust allowance accordingly.
-    _transferFrom(sender, recipient, dTokenAmount);
-    success = true;
-  }
+  //   // Transfer the dTokens and adjust allowance accordingly.
+  //   _transferFrom(sender, recipient, dTokenAmount);
+  //   success = true;
+  // }
 
   /**
    * @notice Increase the current allowance of `spender` by `value` dTokens.
@@ -667,10 +667,10 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * exceeds the aggregate underlying value of the total dToken supply.
    * @return The total surplus in cTokens.
    */
-  function getSurplus() external view returns (uint256 cTokenSurplus) {
-    // Determine the cToken (cToken underlying value - dToken underlying value).
-    (, cTokenSurplus) = _getSurplus();
-  }
+  // function getSurplus() external view returns (uint256 cTokenSurplus) {
+  //   // Determine the cToken (cToken underlying value - dToken underlying value).
+  //   (, cTokenSurplus) = _getSurplus();
+  // }
 
   /**
    * @notice View function to get the total surplus in the underlying, or the
@@ -678,12 +678,12 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * underlying value of the total dToken supply.
    * @return The total surplus, denominated in the underlying.
    */
-  function getSurplusUnderlying() external view returns (
-    uint256 underlyingSurplus
-  ) {
-    // Determine cToken surplus in underlying (cToken value - dToken value).
-    (underlyingSurplus, ) = _getSurplus();
-  }
+  // function getSurplusUnderlying() external view returns (
+  //   uint256 underlyingSurplus
+  // ) {
+  //   // Determine cToken surplus in underlying (cToken value - dToken value).
+  //   (underlyingSurplus, ) = _getSurplus();
+  // }
 
   /**
    * @notice View function to get the interest rate spread taken by the dToken
@@ -733,8 +733,8 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * @notice Pure function to get the address of the cToken backing this dToken.
    * @return The address of the cToken backing this dToken.
    */
-  function getCToken() external pure returns (address cToken) {
-    cToken = _getCToken();
+  function getMToken() external pure returns (address mToken) {
+    mToken = _getMToken();
   }
 
   /**
@@ -757,20 +757,20 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * @return The current dToken and cToken exchange rates.
    */
   function _accrue(bool compute) private returns (
-    uint256 dTokenExchangeRate, uint256 cTokenExchangeRate
+    uint256 dTokenExchangeRate, uint256 mTokenExchangeRate
   ) {
     bool alreadyAccrued;
     (
-      dTokenExchangeRate, cTokenExchangeRate, alreadyAccrued
+      dTokenExchangeRate, mTokenExchangeRate, alreadyAccrued
     ) = _getExchangeRates(compute);
 
     if (!alreadyAccrued) {
       // Update storage with dToken + cToken exchange rates as of current block.
       AccrualIndex storage accrualIndex = _accrualIndex;
       accrualIndex.dTokenExchangeRate = _safeUint112(dTokenExchangeRate);
-      accrualIndex.cTokenExchangeRate = _safeUint112(cTokenExchangeRate);
+      accrualIndex.mTokenExchangeRate = _safeUint112(mTokenExchangeRate);
       accrualIndex.block = uint32(block.number);
-      emit Accrue(dTokenExchangeRate, cTokenExchangeRate);
+      emit Accrue(dTokenExchangeRate, mTokenExchangeRate);
     }
   }
 
@@ -885,37 +885,37 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * calculated and placed in storage.
    */
   function _getExchangeRates(bool compute) private view returns (
-    uint256 dTokenExchangeRate, uint256 cTokenExchangeRate, bool fullyAccrued
+    uint256 dTokenExchangeRate, uint256 mTokenExchangeRate, bool fullyAccrued
   ) {
     // Get the stored accrual block and dToken + cToken exhange rates.
     AccrualIndex memory accrualIndex = _accrualIndex;
     uint256 storedDTokenExchangeRate = uint256(accrualIndex.dTokenExchangeRate);
-    uint256 storedCTokenExchangeRate = uint256(accrualIndex.cTokenExchangeRate);
+    uint256 storedMTokenExchangeRate = uint256(accrualIndex.mTokenExchangeRate);
     uint256 accrualBlock = uint256(accrualIndex.block);
 
     // Use stored exchange rates if an accrual has already occurred this block.
     fullyAccrued = (accrualBlock == block.number);
     if (fullyAccrued) {
       dTokenExchangeRate = storedDTokenExchangeRate;
-      cTokenExchangeRate = storedCTokenExchangeRate;
+      mTokenExchangeRate = storedMTokenExchangeRate;
     } else {
       // Only compute cToken exchange rate if it has not accrued this block.
       if (compute) {
         // Get current cToken exchange rate; inheriting contract overrides this.
-        (cTokenExchangeRate,) = _getCurrentMTokenRates();
+        (mTokenExchangeRate,) = _getCurrentMTokenRates();
       } else {
         // Otherwise, get the stored cToken exchange rate.
-        cTokenExchangeRate = CTokenInterface(_getCToken()).exchangeRateStored();
+        mTokenExchangeRate = IDmmToken(_getMToken()).getCurrentExchangeRate();
       }
 
       // Determine the cToken interest earned during the period.
-      uint256 cTokenInterest = (
-        (cTokenExchangeRate.mul(_SCALING_FACTOR)).div(storedCTokenExchangeRate)
+      uint256 mTokenInterest = (
+        (mTokenExchangeRate.mul(_SCALING_FACTOR)).div(storedMTokenExchangeRate)
       ).sub(_SCALING_FACTOR);
 
       // Calculate dToken exchange rate by applying 90% of the cToken interest.
       dTokenExchangeRate = storedDTokenExchangeRate.mul(
-        _SCALING_FACTOR.add(cTokenInterest.mul(9) / 10)
+        _SCALING_FACTOR.add(mTokenInterest.mul(9) / 10)
       ) / _SCALING_FACTOR;
     }
   }
@@ -926,36 +926,36 @@ contract DharmaTokenV1 is ERC20Interface, DTokenInterface, DharmaTokenHelpers {
    * @return The total surplus, denominated in both the underlying and in the
    * cToken.
    */
-  function _getSurplus() private view returns (
-    uint256 underlyingSurplus, uint256 cTokenSurplus
-  ) {
-    // Instantiate the interface for the backing cToken.
-    CTokenInterface cToken = CTokenInterface(_getCToken());
+  // function _getSurplus() private view returns (
+  //   uint256 underlyingSurplus, uint256 cTokenSurplus
+  // ) {
+  //   // Instantiate the interface for the backing cToken.
+  //   IDmmToken cToken = IDmmToken(_getMToken());
 
-    (
-      uint256 dTokenExchangeRate, uint256 cTokenExchangeRate,
-    ) = _getExchangeRates(true);
+  //   (
+  //     uint256 dTokenExchangeRate, uint256 cTokenExchangeRate,
+  //   ) = _getExchangeRates(true);
 
-    // Determine value of all issued dTokens in the underlying, rounded up.
-    uint256 dTokenUnderlying = _toUnderlying(
-      _totalSupply, dTokenExchangeRate, true
-    );
+  //   // Determine value of all issued dTokens in the underlying, rounded up.
+  //   uint256 dTokenUnderlying = _toUnderlying(
+  //     _totalSupply, dTokenExchangeRate, true
+  //   );
 
-    // Determine value of all retained cTokens in the underlying, rounded down.
-    uint256 cTokenUnderlying = _toUnderlying(
-      cToken.balanceOf(address(this)), cTokenExchangeRate, false
-    );
+  //   // Determine value of all retained cTokens in the underlying, rounded down.
+  //   uint256 cTokenUnderlying = _toUnderlying(
+  //     cToken.balanceOf(address(this)), cTokenExchangeRate, false
+  //   );
 
-    // Determine the size of the surplus in terms of underlying amount.
-    underlyingSurplus = cTokenUnderlying > dTokenUnderlying
-      ? cTokenUnderlying - dTokenUnderlying // overflow checked above
-      : 0;
+  //   // Determine the size of the surplus in terms of underlying amount.
+  //   underlyingSurplus = cTokenUnderlying > dTokenUnderlying
+  //     ? cTokenUnderlying - dTokenUnderlying // overflow checked above
+  //     : 0;
 
-    // Determine the cToken equivalent of this surplus amount.
-    cTokenSurplus = underlyingSurplus == 0
-      ? 0
-      : _fromUnderlying(underlyingSurplus, cTokenExchangeRate, false);
-  }
+  //   // Determine the cToken equivalent of this surplus amount.
+  //   cTokenSurplus = underlyingSurplus == 0
+  //     ? 0
+  //     : _fromUnderlying(underlyingSurplus, cTokenExchangeRate, false);
+  // }
 
   /**
    * @notice Private view function to get the current dToken and cToken interest

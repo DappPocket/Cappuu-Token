@@ -36,60 +36,60 @@ contract DharmaTokenHelpers is DharmaTokenOverrides {
    * reverted.
    * @param data bytes The data provided by the returned or reverted call.
    */
-  function _checkCompoundInteraction(
-    bytes4 functionSelector, bool ok, bytes memory data
-  ) internal pure {
-    CTokenInterface cToken;
-    if (ok) {
-      if (
-        functionSelector == cToken.transfer.selector ||
-        functionSelector == cToken.transferFrom.selector
-      ) {
-        require(
-          abi.decode(data, (bool)), string(
-            abi.encodePacked(
-              "Compound ",
-              _getCTokenSymbol(),
-              " contract returned false on calling ",
-              _getFunctionName(functionSelector),
-              "."
-            )
-          )
-        );
-      } else {
-        uint256 compoundError = abi.decode(data, (uint256)); // throw on no data
-        if (compoundError != _COMPOUND_SUCCESS) {
-          revert(
-            string(
-              abi.encodePacked(
-                "Compound ",
-                _getCTokenSymbol(),
-                " contract returned error code ",
-                uint8((compoundError / 10) + 48),
-                uint8((compoundError % 10) + 48),
-                " on calling ",
-                _getFunctionName(functionSelector),
-                "."
-              )
-            )
-          );
-        }
-      }
-    } else {
-      revert(
-        string(
-          abi.encodePacked(
-            "Compound ",
-            _getCTokenSymbol(),
-            " contract reverted while attempting to call ",
-            _getFunctionName(functionSelector),
-            ": ",
-            _decodeRevertReason(data)
-          )
-        )
-      );
-    }
-  }
+  // function _checkCompoundInteraction(
+  //   bytes4 functionSelector, bool ok, bytes memory data
+  // ) internal pure {
+  //   CTokenInterface cToken;
+  //   if (ok) {
+  //     if (
+  //       functionSelector == cToken.transfer.selector ||
+  //       functionSelector == cToken.transferFrom.selector
+  //     ) {
+  //       require(
+  //         abi.decode(data, (bool)), string(
+  //           abi.encodePacked(
+  //             "Compound ",
+  //             _getCTokenSymbol(),
+  //             " contract returned false on calling ",
+  //             _getFunctionName(functionSelector),
+  //             "."
+  //           )
+  //         )
+  //       );
+  //     } else {
+  //       uint256 compoundError = abi.decode(data, (uint256)); // throw on no data
+  //       if (compoundError != _COMPOUND_SUCCESS) {
+  //         revert(
+  //           string(
+  //             abi.encodePacked(
+  //               "Compound ",
+  //               _getCTokenSymbol(),
+  //               " contract returned error code ",
+  //               uint8((compoundError / 10) + 48),
+  //               uint8((compoundError % 10) + 48),
+  //               " on calling ",
+  //               _getFunctionName(functionSelector),
+  //               "."
+  //             )
+  //           )
+  //         );
+  //       }
+  //     }
+  //   } else {
+  //     revert(
+  //       string(
+  //         abi.encodePacked(
+  //           "Compound ",
+  //           _getCTokenSymbol(),
+  //           " contract reverted while attempting to call ",
+  //           _getFunctionName(functionSelector),
+  //           ": ",
+  //           _decodeRevertReason(data)
+  //         )
+  //       )
+  //     );
+  //   }
+  // }
 
   /**
    * @notice Internal pure function to get a Compound function name based on the
@@ -97,26 +97,26 @@ contract DharmaTokenHelpers is DharmaTokenOverrides {
    * @param functionSelector bytes4 The function selector.
    * @return The name of the function as a string.
    */
-  function _getFunctionName(
-    bytes4 functionSelector
-  ) internal pure returns (string memory functionName) {
-    CTokenInterface cToken;
-    if (functionSelector == cToken.mint.selector) {
-      functionName = "mint";
-    } else if (functionSelector == cToken.redeem.selector) {
-      functionName = "redeem";
-    } else if (functionSelector == cToken.redeemUnderlying.selector) {
-      functionName = "redeemUnderlying";
-    } else if (functionSelector == cToken.transferFrom.selector) {
-      functionName = "transferFrom";
-    } else if (functionSelector == cToken.transfer.selector) {
-      functionName = "transfer";
-    } else if (functionSelector == cToken.accrueInterest.selector) {
-      functionName = "accrueInterest";
-    } else {
-      functionName = "an unknown function";
-    }
-  }
+  // function _getFunctionName(
+  //   bytes4 functionSelector
+  // ) internal pure returns (string memory functionName) {
+  //   CTokenInterface cToken;
+  //   if (functionSelector == cToken.mint.selector) {
+  //     functionName = "mint";
+  //   } else if (functionSelector == cToken.redeem.selector) {
+  //     functionName = "redeem";
+  //   } else if (functionSelector == cToken.redeemUnderlying.selector) {
+  //     functionName = "redeemUnderlying";
+  //   } else if (functionSelector == cToken.transferFrom.selector) {
+  //     functionName = "transferFrom";
+  //   } else if (functionSelector == cToken.transfer.selector) {
+  //     functionName = "transfer";
+  //   } else if (functionSelector == cToken.accrueInterest.selector) {
+  //     functionName = "accrueInterest";
+  //   } else {
+  //     functionName = "an unknown function";
+  //   }
+  // }
 
   /**
    * @notice Internal pure function to decode revert reasons. The revert reason

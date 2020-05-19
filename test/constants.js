@@ -1,6 +1,11 @@
 module.exports = {
+    VERSION: 1,
     USDC_MAINNET_ADDRESS: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     MUSDC_MAINNET_ADDRESS: "0x3564ad35b9e95340e5ace2d6251dbfc76098669b",
+    DMM_CONTROLLER_ADDRESS: "0x4CB120Dd1D33C9A3De8Bc15620C7Cd43418d77E2",
+    DMM_CONTROLLER_ABI: [
+        {"constant":true,"inputs":[{"internalType":"address","name":"underlyingToken","type":"address"}],"name":"getInterestRateByUnderlyingTokenAddress","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+    ],
     DMM_TOKENFACTORY_ABI: [
         {
             inputs: [],

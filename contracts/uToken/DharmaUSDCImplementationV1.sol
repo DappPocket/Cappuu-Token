@@ -3,10 +3,10 @@ pragma solidity 0.5.11;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./DharmaTokenV1.sol";
 import "../../interfaces/CTokenInterface.sol";
-import "../../interfaces/DMM/IDmmToken.sol";
 import "../../interfaces/ERC20Interface.sol";
 import "../../interfaces/CUSDCInterestRateModelInterface.sol";
-
+import "../../interfaces/DMM/IDmmToken.sol";
+import "../../interfaces/DMM/IDmmController.sol";
 
 /**
  * @title DharmaUSDCImplementationV1
@@ -23,23 +23,44 @@ contract DharmaUSDCImplementationV1 is DharmaTokenV1 {
   string internal constant _NAME = "Cappuu USD Coin";
   string internal constant _SYMBOL = "uUSDC";
   string internal constant _UNDERLYING_NAME = "USD Coin";
-  string internal constant _CTOKEN_SYMBOL = "cUSDC";
-
-  CTokenInterface internal constant _CUSDC = CTokenInterface(
-    0x39AA39c021dfbaE8faC545936693aC917d5E7563 // mainnet
-  );
+  string internal constant _MTOKEN_SYMBOL = "mUSDC";
 
   IDmmToken internal constant _MUSDC = IDmmToken(
-    0x39AA39c021dfbaE8faC545936693aC917d5E7563 // mainnet
+    0x3564ad35b9E95340E5Ace2D6251dbfC76098669B // mainnet
+  );
+
+  IDmmController internal constant _DMM_CONTROLLER = IDmmController(
+    0x4CB120Dd1D33C9A3De8Bc15620C7Cd43418d77E2 // mainnet
   );
 
   ERC20Interface internal constant _USDC = ERC20Interface(
     0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 // mainnet
   );
 
+  // TODO: change this
   address internal constant _VAULT = 0x7e4A8391C728fEd9069B2962699AB416628B19Fa;
 
   uint256 internal constant _SCALING_FACTOR_SQUARED = 1e36;
+
+  // Set block number and dToken + cToken exchange rate in slot zero on accrual.
+
+  /**
+   * @notice constructor
+  // TODO: Test only!!!
+   */
+  constructor() public {
+    // Initial dToken exchange rate is 1-to-1 (dTokens have 8 decimals).
+    uint256 dTokenExchangeRate = 1e16;
+
+    // Accrue cToken interest and retrieve the current cToken exchange rate.
+    uint256 mTokenExchangeRate = _MUSDC.getCurrentExchangeRate();
+
+    // Initialize accrual index with current block number and exchange rates.
+    AccrualIndex storage accrualIndex = _accrualIndex;
+    accrualIndex.dTokenExchangeRate = uint112(dTokenExchangeRate);
+    accrualIndex.mTokenExchangeRate = _safeUint112(mTokenExchangeRate);
+    accrualIndex.block = uint32(block.number);
+  }
 
   /**
    * @notice Internal view function to get the current cUSDC exchange rate and
@@ -47,11 +68,17 @@ contract DharmaUSDCImplementationV1 is DharmaTokenV1 {
    * @return The current cUSDC exchange rate, or amount of USDC that is
    * redeemable for each cUSDC, and the cUSDC supply rate per block (with 18
    * decimal places added to each returned rate).
+   * Exchange rate: underlying / cToken
+   * Supply rate: cToken's interest rate
    */
   // TODO: Change this
   function _getCurrentMTokenRates() internal view returns (
     uint256 exchangeRate, uint256 supplyRate
   ) {
+    exchangeRate = _MUSDC.getCurrentExchangeRate();
+    supplyRate = _DMM_CONTROLLER.getInterestRateByUnderlyingTokenAddress(address(_USDC));
+
+    /*
     // Determine number of blocks that have elapsed since last cUSDC accrual.
     uint256 blockDelta = block.number.sub(_CUSDC.accrualBlockNumber());
 
@@ -101,6 +128,7 @@ contract DharmaUSDCImplementationV1 is DharmaTokenV1 {
     supplyRate = (
       borrowRate.mul(_SCALING_FACTOR.sub(reserveFactor)).mul(borrowsPer)
     ) / _SCALING_FACTOR_SQUARED;
+    */
   }
 
   /**
@@ -124,16 +152,16 @@ contract DharmaUSDCImplementationV1 is DharmaTokenV1 {
    * @notice Internal pure function to supply the symbol of the backing cToken.
    * @return The symbol of the backing cToken.
    */
-  function _getCTokenSymbol() internal pure returns (string memory cTokenSymbol) {
-    cTokenSymbol = _CTOKEN_SYMBOL;
+  function _getMTokenSymbol() internal pure returns (string memory mTokenSymbol) {
+    mTokenSymbol = _MTOKEN_SYMBOL;
   }
 
   /**
    * @notice Internal pure function to supply the address of the backing cToken.
    * @return The address of the backing cToken.
    */
-  function _getCToken() internal pure returns (address cToken) {
-    cToken = address(_CUSDC);
+  function _getMToken() internal pure returns (address mToken) {
+    mToken = address(_MUSDC);
   }
 
   /**
