@@ -6,12 +6,12 @@ const { web3 } = require('@openzeppelin/test-environment');
 
 const USDC = new web3.eth.Contract(
     IERC20Artifact.abi,
-    constants.USDC_MAINNET_ADDRESS
+    constants.ADDRESSES.MAINNET.USDC
 );
 
 const MUSDC = new web3.eth.Contract(
     DMMTokenArtifact.abi,
-    constants.MUSDC_MAINNET_ADDRESS
+    constants.ADDRESSES.MAINNET.MUSDC
 );
 
 /**

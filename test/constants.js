@@ -1,6 +1,12 @@
 module.exports = {
-    USDC_MAINNET_ADDRESS: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    MUSDC_MAINNET_ADDRESS: "0x3564ad35b9e95340e5ace2d6251dbfc76098669b",
+    ADDRESSES: {
+        MAINNET: {
+            USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            MUSDC: "0x3564ad35b9e95340e5ace2d6251dbfc76098669b",
+            cUSDC: "0x39aa39c021dfbae8fac545936693ac917d5e7563",
+            iUSDC: "0xF013406A0B1d544238083DF0B93ad0d2cBE0f65f",
+        },
+    },
     DMM_TOKENFACTORY_ABI: [
         {
             inputs: [],
