@@ -3,8 +3,11 @@ module.exports = {
         MAINNET: {
             USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
             MUSDC: "0x3564ad35b9e95340e5ace2d6251dbfc76098669b",
-            cUSDC: "0x39aa39c021dfbae8fac545936693ac917d5e7563",
+            cUSDC: "0x39AA39c021dfbaE8faC545936693aC917d5E7563",
             iUSDC: "0xF013406A0B1d544238083DF0B93ad0d2cBE0f65f",
+            aUSDC: "0x9bA00D6856a4eDF4665BcA2C2309936572473B7E",
+            yxUSDC: "0xd2F45883627f26EC34825486ca4c25235A0da0C3",
+            USDC_VAULT: "0xF977814e90dA44bFA03b6295A0616a897441aceC", // Binance
         },
     },
     DMM_TOKENFACTORY_ABI: [
