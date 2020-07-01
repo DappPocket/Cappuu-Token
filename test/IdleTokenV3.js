@@ -12,6 +12,7 @@ const IdleTokenV3 = contract.fromArtifact('IdleTokenV3');
 const IdleAave = contract.fromArtifact('IdleAave');
 const IdleDyDx = contract.fromArtifact('IdleDyDx');
 const ERC20 = contract.fromArtifact('ERC20');
+const CERC20 = contract.fromArtifact('CERC20');
 
 describe('Idle Token V3', () => {
     let Token;
@@ -168,10 +169,27 @@ describe('Idle Token V3', () => {
             const balance = await Token.balanceOf.call(minter, { from: minter });
             expect(balance.toString()).to.equal('1000' + '1000000000000000000');
         });
-        // it('Get tokenPrice after mint token', async () => {
-        //     const price = (await Token.tokenPrice.call()).toString();
-        //     expect(Number(price)).to.above(Number('1000000'));
-        // });
+        it('Get tokenPrice after mint token', async () => {
+            const cUSDC = await CERC20.at(constants.ADDRESSES.MAINNET.cUSDC);
+            const cUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.cUSDC);
+
+            // Get cTokenExangeRate
+            const exchangeRate = await cUSDC.exchangeRateStored();
+
+            // Get cTokenBalance of Idle Token
+            const cTokenBalance = await cUSDC20.balanceOf.call(Token.address);
+
+            // Get totalSupply of Idle Token
+            const totalSupply = await Token.totalSupply();
+
+            // estTokenPrice = (cTokenBalance * cTokenPrice) / totalSupply
+            const estTokenPrice = cTokenBalance.mul(exchangeRate).div(totalSupply);
+            // estTokenPrice will be 999999
+            
+            // Get TokenPrice of Idle Token
+            const tokenPrice = (await Token.tokenPrice.call());
+            expect(tokenPrice.toString()).to.equal(estTokenPrice.toString());
+        });
         it('Redeem 1000 Idle Token', async () => {
             const amount = '1000' + '1000000000000000000'; // Idle USDC decimals is 18
 
