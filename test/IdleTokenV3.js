@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { web3, accounts, contract, balance } = require('@openzeppelin/test-environment');
-const { BN,  } = require('@openzeppelin/test-helpers');
+const { BN, time } = require('@openzeppelin/test-helpers');
 
 const constants = require('./constants');
 const IdleRebalancerV3 = contract.fromArtifact('IdleRebalancerV3');
@@ -135,21 +135,23 @@ describe('Idle Token V3', () => {
         });
     });
 
-    describe('Check allocation, price & apr of Idle Token', () => {
-        it('Calculate current tokenPrice when IdleToken supply is 0', async () => {
+    describe('Check   price & apr of Idle Token', () => {
+        it('Get tokenPrice when IdleToken supply is 0', async () => {
             const price = (await Token.tokenPrice.call()).toString();
             expect(price).to.equal('1000000');
         });
-        // it('Check current allocation', async () => {
+        // it('Get current allocation', async () => {
         //     const resGetParams = await Token.getCurrentAllocations.call();
         //     console.log(resGetParams);
         // });
-        // TODO: Check apr
+        // it('Get current apr', async () => {
+           
+        // });
     });
 
     describe('Mint & Redeem Idle Token', () => {
-        it('Mint 100 Idle USDC', async () => {
-            const amount = '100000000'; // USDC decimals is 6
+        it('Mint 1000 Idle Token', async () => {
+            const amount = '1000' + '1000000'; // USDC decimals is 6
 
             // Transfer USDC to minter
             // await web3.eth.sendTransaction({ from: ethVault, to: usdcVault, value: '200000000000000000'});
@@ -164,10 +166,31 @@ describe('Idle Token V3', () => {
 
             // Check Idle Token balance
             const balance = await Token.balanceOf.call(minter, { from: minter });
-            expect(balance.toString()).to.equal('100000000000000000000');
+            expect(balance.toString()).to.equal('1000' + '1000000000000000000');
         });
-        it('Redeem 10 Idle USDC', async () => {
+        // it('Get tokenPrice after mint token', async () => {
+        //     const price = (await Token.tokenPrice.call()).toString();
+        //     expect(Number(price)).to.above(Number('1000000'));
+        // });
+        it('Redeem 1000 Idle Token', async () => {
+            const amount = '1000' + '1000000000000000000'; // Idle USDC decimals is 18
 
+            // Mine 5 blocks
+            const latestBlock = await time.latestBlock();
+            await time.advanceBlockTo(latestBlock.toNumber() + 5);
+
+            // Redeem Idle Token
+            await Token.redeemIdleToken(amount, false, [], { from: minter });
+
+            // Check Idle Token balance
+            const balance = await Token.balanceOf.call(minter, { from: minter });
+            expect(balance.toString()).to.equal('0');
+
+            // Check USDC balance
+            const USDC = await ERC20.at(constants.ADDRESSES.MAINNET.USDC);
+            const usdcBalance = await USDC.balanceOf.call(minter, { from: minter });
+            // usdcBalance will be near 10001000179
+            expect(usdcBalance.toNumber()).to.above(1000 * 1000000);
         });
     });
 
