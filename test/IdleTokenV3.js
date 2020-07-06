@@ -176,27 +176,18 @@ describe('Idle Token V3', () => {
         it('Mint 1000 Idle Token', async () => {
             const amount = '1000' + '1000000'; // USDC decimals is 6
 
-            // Transfer USDC to minter
-            // await web3.eth.sendTransaction({ from: ethVault, to: usdcVault, value: '200000000000000000'});
-            const USDC = await ERC20.at(constants.ADDRESSES.MAINNET.USDC);
-            await USDC.transfer(minter, amount, { from: usdcVault });
-
-            // Approve Idle Token to spend USDC
-            await USDC.approve(Token.address, amount, { from: minter });
-
             // Mint Idle Token
-            await Token.mintIdleToken(amount, false, { from: minter });
+            await this.mintIdleToken(amount, minter);
 
             // Check Idle Token balance
             const balance = await Token.balanceOf.call(minter, { from: minter });
             expect(balance.toString()).to.equal('1000' + '1000000000000000000');
         });
         it('Get tokenPrice after mint token', async () => {
-            const cUSDC = await CERC20.at(constants.ADDRESSES.MAINNET.cUSDC);
             const cUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.cUSDC);
 
             // Get cTokenExangeRate
-            const exchangeRate = await cUSDC.exchangeRateStored();
+            const exchangeRate = await this.cUSDCWrapper.getPriceInToken();
 
             // Get cTokenBalance of Idle Token
             const cTokenBalance = await cUSDC20.balanceOf.call(Token.address);
