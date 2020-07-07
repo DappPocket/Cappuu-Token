@@ -99,19 +99,21 @@ describe('Idle Token V3', () => {
 
         // Helper functions
         /**
-         * @param {string} amount
+         * @param {string} amount e.g. 1000 USDC
          * @param {string} from
          */
         this.mintIdleToken = async (amount, from) => {
+            const actualAmount = amount + '000000';  // USDC decimals is 6
+
             // Transfer USDC to minter
             const USDC = await ERC20.at(constants.ADDRESSES.MAINNET.USDC);
-            await USDC.transfer(minter, amount, { from: usdcVault });
+            await USDC.transfer(minter, actualAmount, { from: usdcVault });
 
             // Approve Idle Token to spend USDC
-            await USDC.approve(Token.address, amount, { from });
+            await USDC.approve(Token.address, actualAmount, { from });
 
             // Mint Idle Token
-            await Token.mintIdleToken(amount, false, { from });
+            await Token.mintIdleToken(actualAmount, false, { from });
         }
         /**
          * @param {array} allocs 
@@ -174,14 +176,13 @@ describe('Idle Token V3', () => {
 
     describe('Mint & Redeem Idle Token', () => {
         it('Mint 1000 Idle Token', async () => {
-            const amount = '1000' + '1000000'; // USDC decimals is 6
-
             // Mint Idle Token
+            const amount = '1000';
             await this.mintIdleToken(amount, minter);
 
             // Check Idle Token balance
             const balance = await Token.balanceOf.call(minter, { from: minter });
-            expect(balance.toString()).to.equal('1000' + '1000000000000000000');
+            expect(balance.toString()).to.equal(amount + '000000000000000000');
         });
         it('Get tokenPrice after mint token', async () => {
             const cUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.cUSDC);
@@ -204,7 +205,7 @@ describe('Idle Token V3', () => {
             expect(tokenPrice.toString()).to.equal(estTokenPrice.toString());
         });
         it('Redeem 1000 Idle Token', async () => {
-            const amount = '1000' + '1000000000000000000'; // Idle USDC decimals is 18
+            const amount = '1000' + '000000000000000000'; // Idle USDC decimals is 18
 
             // Mine 5 blocks
             const latestBlock = await time.latestBlock();
@@ -289,12 +290,12 @@ describe('Idle Token V3', () => {
             this.testAllocations(alloc);
             
             // Mint idle token
-            const amount = '1000' + '1000000'; // USDC decimals is 6
+            const amount = '1000';
             await this.mintIdleToken(amount, minter);
 
             // Check idle token balance
             const balance = await Token.balanceOf.call(minter, { from: minter });
-            expect(balance.toString()).to.equal('1000' + '1000000000000000000');
+            expect(balance.toString()).to.equal(amount + '000000000000000000');
 
             // Get cToken and iToken balance
             const cUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.cUSDC);
@@ -366,7 +367,7 @@ describe('Idle Token V3', () => {
         //     expect(tokenPrice.toString()).to.equal(estTokenPrice.toString());
         // })
         it('Redeem 1000 Idle Token after rebalance', async () => {
-            const amount = '1000' + '1000000000000000000'; // Idle USDC decimals is 18
+            const amount = '1000' + '000000000000000000'; // Idle USDC decimals is 18
 
             // Mine 5 blocks
             const latestBlock = await time.latestBlock();
