@@ -8,8 +8,9 @@
     "compilerSettings": {
       "optimizer": {
         "enabled": true,
-        "runs": "200"
-      }
+        "runs": "45000"
+      },
+      "evmVersion": "istanbul"
     },
     "typechain": {
       "enabled": false
