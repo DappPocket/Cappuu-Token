@@ -13,7 +13,7 @@ const IdleDyDx = artifacts.require('IdleDyDx');
 const ERC20 = artifacts.require('ERC20');
 const CERC20 = artifacts.require('CERC20');
 
-contract('Idle Token V3', (accounts) => {
+contract('Idle Token V3 - Aave', (accounts) => {
     let Token;
     let idleRebalancer;
     let idlePriceCalculator;
@@ -113,8 +113,6 @@ contract('Idle Token V3', (accounts) => {
 
             // Mint Idle Token
             await Token.mintIdleToken(actualAmount, true, { from });
-            // If false, it will trigger rebalance.
-            // If true, it will skip rebalacne. Therefore, you need to call rebalance before if the allocation is updated.
         }
         /**
          * @param {array} allocs 
@@ -137,7 +135,7 @@ contract('Idle Token V3', (accounts) => {
         };
     });
 
-    context('Check config of Idle Token', () => {
+    context('Check config of Idle Token - Aave', () => {
         it('constructor set a name', async function () {
             expect(await Token.name()).to.equal('IdleUSDC');
         });
@@ -166,7 +164,7 @@ contract('Idle Token V3', (accounts) => {
         });
     });
 
-    context('Check price & apr of Idle Token', () => {
+    context('Check price & apr of Idle Token - Aave', () => {
         it('Get tokenPrice when IdleToken supply is 0', async () => {
             const price = (await Token.tokenPrice.call()).toString();
             expect(price).to.equal('1000000');
@@ -175,65 +173,14 @@ contract('Idle Token V3', (accounts) => {
         // });
     });
 
-    context('Mint & Redeem Idle Token', () => {
-        it('Mint 1000 Idle Token', async () => {
-            // Mint Idle Token
-            const amount = '1000';
-            await this.mintIdleToken(amount, minter);
-
-            // Check Idle Token balance
-            const balance = await Token.balanceOf.call(minter, { from: minter });
-            expect(balance.toString()).to.equal(amount + '000000000000000000');
-        });
-        it('Get tokenPrice after mint token', async () => {
-            const cUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.cUSDC);
-
-            // Get cTokenExangeRate
-            const exchangeRate = await this.cUSDCWrapper.getPriceInToken();
-
-            // Get cTokenBalance of Idle Token
-            const cTokenBalance = await cUSDC20.balanceOf.call(Token.address);
-
-            // Get totalSupply of Idle Token
-            const totalSupply = await Token.totalSupply();
-
-            // estTokenPrice = (cTokenBalance * cTokenPrice) / totalSupply
-            const estTokenPrice = cTokenBalance.mul(exchangeRate).div(totalSupply);
-            // estTokenPrice will be 999999
-            
-            // Get TokenPrice of Idle Token
-            const tokenPrice = (await Token.tokenPrice.call());
-            expect(tokenPrice.toString()).to.equal(estTokenPrice.toString());
-        });
-        it('Redeem 1000 Idle Token', async () => {
-            const amount = '1000' + '000000000000000000'; // Idle USDC decimals is 18
-
-            // Mine 5 blocks
-            const latestBlock = await time.latestBlock();
-            await time.advanceBlockTo(latestBlock.toNumber() + 5);
-
-            // Redeem Idle Token
-            await Token.redeemIdleToken(amount, false, [], { from: minter });
-
-            // Check Idle Token balance
-            const balance = await Token.balanceOf.call(minter, { from: minter });
-            expect(balance.toString()).to.equal('0');
-
-            // Check USDC balance
-            const USDC = await ERC20.at(constants.ADDRESSES.MAINNET.USDC);
-            const usdcBalance = await USDC.balanceOf.call(minter, { from: minter });
-            // usdcBalance will be near 10001000179
-            expect(usdcBalance.toNumber()).to.above(1000 * 1000000);
-        });
-    });
-
-    context('Set Allocation', () => {
+    context('Set Allocation - Aave', () => {
         // There is no value for initial last allocation
         // it('Check last allocation', async () => {
         //     // this.testAllocations(['100000', '0', '0', '0']);
         // });
-        it('Set allocation to 50% Compound, 50% Fulcrum and mint 1000 Idle Token', async () => {
-            const alloc = ['50000', '50000', '0', '0'];
+        // TODO: It causes error when mint Idle Token
+        it('Set allocation to 100% Aave and mint 1000 Idle Token', async () => {
+            const alloc = ['0', '0', '100000', '0'];
 
             // Set allocation
             await this.setRebAllocations(alloc);
@@ -256,15 +203,12 @@ contract('Idle Token V3', (accounts) => {
             const balance = await Token.balanceOf.call(minter, { from: minter });
             expect(balance.toString()).to.equal(amount + '000000000000000000');
 
-            // Get cToken and iToken balance
-            const cUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.cUSDC);
-            const iUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.iUSDC);
-            const cTokenBalance = await cUSDC20.balanceOf.call(Token.address);
-            const iTokenBalance = await iUSDC20.balanceOf.call(Token.address);
+            // Get aToken balance
+            const aUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.aUSDC);
+            const aTokenBalance = await aUSDC20.balanceOf.call(Token.address);
 
-            // Get cToken and iToken price
-            const cTokenExchangeRate = await this.cUSDCWrapper.getPriceInToken();
-            const iTokenExchangeRate = await this.iUSDCWrapper.getPriceInToken();
+            // Get aToken price
+            const aTokenExchangeRate = await this.aUSDCWrapper.getPriceInToken();
 
             // Get totalSupply of Idle Token
             const totalSupply = await Token.totalSupply();
@@ -273,10 +217,57 @@ contract('Idle Token V3', (accounts) => {
             const tokenPrice = (await Token.tokenPrice.call());
 
             // Check token price
-            // ((cTokenBalance * cTokenExchangeRate) + (aTokenBalance * aTokenExchnageRate)) / totalSupply = tokenPrice
-            const estTokenPrice = cTokenBalance.mul(cTokenExchangeRate).add(iTokenBalance.mul(iTokenExchangeRate)).div(totalSupply);
+            const estTokenPrice = aTokenBalance.mul(aTokenExchangeRate).div(totalSupply);
             expect(tokenPrice.toString()).to.equal(estTokenPrice.toString());
         });
+        // TODO: It causes error when mint Idle Token
+        // it('Set allocation to 10% Compound, 0% Fulcrum, 90% Aave and Mint 1000 Idle Token', async () => {
+        //     const alloc = ['10000', '0', '90000', '0'];
+
+        //     // Set allocation
+        //     await this.setRebAllocations(alloc);
+
+        //     // Get allocation from rebalancer
+        //     const lastAlloc = await idleRebalancer.getAllocations.call();
+        //     expect(lastAlloc.toString()).to.equal(alloc.toString());
+
+        //     // Rebalance
+        //     await Token.rebalance();
+
+        //     // Check allocation
+        //     this.testAllocations(alloc);
+
+        //     // Mint idle token
+        //     const amount = '1000' + '1000000'; // USDC decimals is 6
+        //     await this.mintIdleToken(amount, minter);
+
+        //     // Check idle token balance
+        //     const balance = await Token.balanceOf.call(minter, { from: minter });
+        //     expect(balance.toString()).to.equal('1000' + '1000000000000000000');
+
+        //     // Get cToken and aToken balance
+        //     const cUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.cUSDC);
+        //     const aUSDC20 = await ERC20.at(constants.ADDRESSES.MAINNET.aUSDC);
+        //     const cTokenBalance = await cUSDC20.balanceOf.call(Token.address);
+        //     const aTokenBalance = await aUSDC20.balanceOf.call(Token.address);
+        //     console.log(cTokenBalance.toString());
+        //     console.log(aTokenBalance.toString());
+
+        //     // Get cToken and aToken price
+        //     const cTokenExchangeRate = await this.cUSDCWrapper.getPriceInToken();
+        //     const aTokenExchangeRate = await this.aUSDCWrapper.getPriceInToken();
+
+        //     // Get totalSupply of Idle Token
+        //     const totalSupply = await Token.totalSupply();
+
+        //     // Get TokenPrice of Idle Token
+        //     const tokenPrice = (await Token.tokenPrice.call());
+
+        //     // Check token price
+        //     // ((cTokenBalance * cTokenExchangeRate) + (aTokenBalance * aTokenExchnageRate)) / totalSupply = tokenPrice
+        //     const estTokenPrice = cTokenBalance.mul(cTokenExchangeRate).add(aTokenBalance.mul(aTokenExchangeRate)).div(totalSupply);
+        //     expect(tokenPrice.toString()).to.equal(estTokenPrice.toString());
+        // })
         it('Redeem 1000 Idle Token after rebalance', async () => {
             const amount = '1000' + '000000000000000000'; // Idle USDC decimals is 18
 

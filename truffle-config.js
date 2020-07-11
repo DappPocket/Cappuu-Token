@@ -17,9 +17,9 @@ module.exports = {
     },
     ropsten: {
       provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/${projectId}`),
-      network_id: 3,       // Ropsten's id
-      gas: 5500000,        // Ropsten has a lower block limit than mainnet
-      gasPrice: 5000000000,
+      network_id: 3,         // Ropsten's id
+      gas: 5500000,          // Gas limit used for deploys. Default is 6721975. Ropsten has a lower block limit than mainnet
+      gasPrice: 5000000000,  // Gas price used for deploys. Default is 100000000000
     },
     kovan: {
       provider: () => new HDWalletProvider(mnemonic, `https://kovan.infura.io/v3/${projectId}`),
@@ -45,4 +45,9 @@ module.exports = {
       }
     }
   },
+
+  // Set contract folders, these 2 need to be set at same time!
+  // contracts_directory: "./test/contracts",
+  // contracts_build_directory: "./build/contracts",
+
 }

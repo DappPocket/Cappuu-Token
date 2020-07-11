@@ -10,7 +10,9 @@
     "deploy": "npx oz deploy",
     "test": "npx mocha --exit --timeout 500000",
     "compile-and-test": "npx oz compile && npx mocha --exit --timeout 500000",
-    "migrate-fork": "npx truffle migrate --network fork"
+    "migrate": "npx truffle migrate",
+    "migrate-fork": "npx truffle migrate --network fork",
+    "test-truffle": "npx truffle test"
   },
   "author": "",
   "license": "ISC",
