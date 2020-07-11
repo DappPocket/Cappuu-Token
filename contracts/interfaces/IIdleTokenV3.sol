@@ -33,6 +33,19 @@ interface IIdleTokenV3 {
 
   /**
    * Used to mint IdleTokens, given an underlying amount (eg. DAI).
+   * This method triggers a rebalance of the pools if needed and if _skipWholeRebalance is false
+   * NOTE: User should 'approve' _amount of tokens before calling mintIdleToken
+   * NOTE 2: this method can be paused
+   * This method use GasTokens of this contract (if present) to get a gas discount
+   *
+   * @param _amount : amount of underlying token to be lended
+   * @param _skipWholeRebalance : flag to choose whter to do a full rebalance or not
+   * @return mintedTokens : amount of IdleTokens minted
+   */
+  function mintIdleToken(uint256 _amount, bool _skipWholeRebalance) external returns (uint256 mintedTokens);
+
+  /**
+   * Used to mint IdleTokens, given an underlying amount (eg. DAI).
    * This method triggers a rebalance of the pools if needed
    * NOTE: User should 'approve' _amount of tokens before calling mintIdleToken
    * NOTE 2: this method can be paused
@@ -41,7 +54,7 @@ interface IIdleTokenV3 {
    * @param : pass []
    * @return mintedTokens : amount of IdleTokens minted
    */
-  function mintIdleToken(uint256 _amount, uint256[] calldata) external returns (uint256 mintedTokens);
+  // function mintIdleToken(uint256 _amount, uint256[] calldata) external returns (uint256 mintedTokens);
 
   /**
    * Here we calc the pool share one can withdraw given the amount of IdleToken they want to burn

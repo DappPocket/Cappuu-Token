@@ -333,11 +333,11 @@ contract IdleTokenV3 is ERC20, ERC20Detailed, ReentrancyGuard, Ownable, Pausable
    * @param : not used, pass empty array
    * @return mintedTokens : amount of IdleTokens minted
    */
-  function mintIdleToken(uint256 _amount, uint256[] calldata)
-    external nonReentrant gasDiscountFrom(address(this))
-    returns (uint256 mintedTokens) {
-    return _mintIdleToken(_amount, new uint256[](0), false);
-  }
+  // function mintIdleToken(uint256 _amount, uint256[] calldata)
+  //   external nonReentrant gasDiscountFrom(address(this))
+  //   returns (uint256 mintedTokens) {
+  //   return _mintIdleToken(_amount, new uint256[](0), false);
+  // }
 
   /**
    * Here we calc the pool share one can withdraw given the amount of IdleToken they want to burn
