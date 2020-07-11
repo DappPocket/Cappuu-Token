@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "npx oz compile",
     "start-chain": "ganache-cli --deterministic",
-    "start-fork-chain": "ganache-cli --deterministic --fork https://mainnet.infura.io/v3/15a82b43433b481ea733e751da927335",
+    "start-fork-chain": "ganache-cli --deterministic --fork https://mainnet.infura.io/v3/15a82b43433b481ea733e751da927335 --unlock '0xF977814e90dA44bFA03b6295A0616a897441aceC'",
     "deploy": "npx oz deploy",
     "test": "npx mocha --exit --timeout 500000",
     "compile-and-test": "npx oz compile && npx mocha --exit --timeout 500000",

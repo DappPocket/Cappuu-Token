@@ -48,9 +48,9 @@ const yxUSDC = {
 };
 
 module.exports = async function(deployer, network, accounts) {
-  // if (network === 'test') {
-  //   return;
-  // }
+  if (network === 'test') {
+    return;
+  }
   console.log('Network: ', network);
 
   const decimals = 18;
